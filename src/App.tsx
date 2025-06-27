@@ -7,6 +7,7 @@ import Courses from './pages/Courses';
 import StudySession from './pages/StudySession';
 import SocialHub from './pages/SocialHub';
 import Settings from './pages/Settings';
+import TavusVibeDemo from './pages/TavusVibeDemo';
 import AuthModal from './components/auth/AuthModal';
 import { useAuthStore } from './store/authStore';
 import { useUserDataStore } from './store/userDataStore';
@@ -40,6 +41,7 @@ function App() {
               <Route path="/study" element={<StudySession />} />
               <Route path="/social" element={<SocialHub />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/tavus-demo" element={<TavusVibeDemo />} />
             </>
           ) : (
             <>
@@ -49,6 +51,7 @@ function App() {
               <Route path="/study" element={<Navigate to="/" replace />} />
               <Route path="/social" element={<Navigate to="/" replace />} />
               <Route path="/settings" element={<Navigate to="/" replace />} />
+              <Route path="/tavus-demo" element={<Navigate to="/" replace />} />
             </>
           )}
           
