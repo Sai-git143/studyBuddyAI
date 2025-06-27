@@ -114,7 +114,7 @@ const TavusVibeStudySession: React.FC<TavusVibeStudySessionProps> = ({
           </div>
           <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
             <p className="text-sm text-blue-700">
-              💡 <strong>Get started:</strong> Visit <a href="https://tavus.io" target="_blank" rel="noopener noreferrer" className="underline">tavus.io</a> to get your API keys and set up your AI persona.
+              💡 <strong>Get started:</strong> Visit <a href="https://tavus.io" target=\"_blank" rel="noopener noreferrer\" className="underline">tavus.io</a> to get your API keys and set up your AI persona.
             </p>
           </div>
         </div>
