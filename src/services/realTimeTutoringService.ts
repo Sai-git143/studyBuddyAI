@@ -1,5 +1,5 @@
 import { API_CONFIG } from '../config/api';
-import { geminiService } from './geminiService';
+import { openaiService } from './openaiService';
 import { elevenLabsService } from './elevenLabsService';
 
 export interface LiveTutoringSession {
@@ -64,7 +64,7 @@ class RealTimeTutoringService {
 
       this.sessionId = session.id;
 
-      // Generate initial content based on topic using Gemini
+      // Generate initial content based on topic
       await this.generateInitialContent(subject, topic, userLevel, learningStyle);
 
       console.log('Live tutoring session started:', session);
@@ -137,21 +137,21 @@ class RealTimeTutoringService {
       // Analyze user input and current state
       const contentType = this.determineContentType(userInput, currentUnderstanding);
       
-      // Generate personalized content using Gemini AI
+      // Generate personalized content using AI
       const prompt = this.createContentPrompt(userInput, contentType, emotionalState);
-      const generatedContent = await geminiService.generateContent({
-        contents: [
+      const generatedContent = await openaiService.chatCompletion({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert tutor creating real-time educational content. Provide clear, engaging explanations adapted to the user\'s current understanding level and emotional state.'
+          },
           {
             role: 'user',
-            parts: [{ 
-              text: `You are an expert tutor creating real-time educational content. Provide clear, engaging explanations adapted to the user's current understanding level and emotional state.\n\n${prompt}` 
-            }]
+            content: prompt
           }
         ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 800
-        }
+        temperature: 0.7,
+        max_tokens: 800
       });
 
       const content: RealTimeContent = {
@@ -185,33 +185,7 @@ class RealTimeTutoringService {
       const understanding = this.analyzeUnderstanding(userResponse, interactionData);
       const engagement = this.analyzeEngagement(timeSpent, interactionData);
       
-      // Generate personalized feedback using Gemini
-      const feedbackPrompt = `Analyze this student interaction:
-      Response: "${userResponse}"
-      Time spent: ${timeSpent} seconds
-      Understanding level: ${understanding}%
-      Engagement level: ${engagement}%
-      
-      Provide specific feedback on:
-      1. Areas of confusion (if any)
-      2. Suggested next actions
-      3. Recommended topics to explore
-      
-      Be encouraging and constructive.`;
-
-      const feedbackText = await geminiService.generateContent({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: feedbackPrompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 400
-        }
-      });
-
+      // Generate personalized feedback
       const feedback: LiveFeedback = {
         understanding,
         engagement,
@@ -247,102 +221,24 @@ class RealTimeTutoringService {
       Include: question, multiple choice options, correct answer, detailed explanation, and hints.
       Format as JSON.`;
 
-      const problemData = await geminiService.generateContent({
-        contents: [
+      const problemData = await openaiService.chatCompletion({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert problem creator. Generate engaging, educational problems with clear explanations.'
+          },
           {
             role: 'user',
-            parts: [{ 
-              text: `You are an expert problem creator. Generate engaging, educational problems with clear explanations. ${prompt}\n\nIMPORTANT: Respond ONLY with valid JSON, no additional text.` 
-            }]
+            content: prompt
           }
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 800
-        }
+        ]
       });
 
-      // Enhanced JSON parsing with multiple fallback strategies
-      return this.parseJsonResponse(problemData);
+      return JSON.parse(problemData);
     } catch (error) {
       console.error('Interactive problem generation failed:', error);
       return this.getFallbackProblem(topic);
     }
-  }
-
-  private parseJsonResponse(response: string): any {
-    // Strategy 1: Try to parse the entire response directly
-    try {
-      const parsed = JSON.parse(response);
-      // If it's an array, return the first element
-      return Array.isArray(parsed) ? parsed[0] : parsed;
-    } catch (error) {
-      // Continue to next strategy
-    }
-
-    // Strategy 2: Look for JSON wrapped in markdown code blocks
-    const markdownJsonMatch = response.match(/```(?:json)?\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/);
-    if (markdownJsonMatch) {
-      try {
-        const parsed = JSON.parse(markdownJsonMatch[1]);
-        return Array.isArray(parsed) ? parsed[0] : parsed;
-      } catch (error) {
-        // Continue to next strategy
-      }
-    }
-
-    // Strategy 3: Look for JSON object or array in the response
-    const jsonObjectMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonObjectMatch) {
-      try {
-        const parsed = JSON.parse(jsonObjectMatch[0]);
-        return Array.isArray(parsed) ? parsed[0] : parsed;
-      } catch (error) {
-        // Continue to next strategy
-      }
-    }
-
-    // Strategy 4: Look for JSON array in the response
-    const jsonArrayMatch = response.match(/\[[\s\S]*\]/);
-    if (jsonArrayMatch) {
-      try {
-        const parsed = JSON.parse(jsonArrayMatch[0]);
-        return Array.isArray(parsed) ? parsed[0] : parsed;
-      } catch (error) {
-        // Continue to next strategy
-      }
-    }
-
-    // Strategy 5: Try to clean up common JSON formatting issues
-    try {
-      // Remove any leading/trailing non-JSON text
-      let cleanedResponse = response.trim();
-      
-      // Remove markdown formatting
-      cleanedResponse = cleanedResponse.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
-      
-      // Find the first { or [ and last } or ]
-      const firstBrace = Math.min(
-        cleanedResponse.indexOf('{') !== -1 ? cleanedResponse.indexOf('{') : Infinity,
-        cleanedResponse.indexOf('[') !== -1 ? cleanedResponse.indexOf('[') : Infinity
-      );
-      
-      const lastBrace = Math.max(
-        cleanedResponse.lastIndexOf('}'),
-        cleanedResponse.lastIndexOf(']')
-      );
-      
-      if (firstBrace !== Infinity && lastBrace !== -1 && firstBrace < lastBrace) {
-        const jsonString = cleanedResponse.substring(firstBrace, lastBrace + 1);
-        const parsed = JSON.parse(jsonString);
-        return Array.isArray(parsed) ? parsed[0] : parsed;
-      }
-    } catch (error) {
-      // Final fallback
-    }
-
-    // If all strategies fail, throw the original error
-    throw new Error(`Failed to parse JSON response: ${response.substring(0, 200)}...`);
   }
 
   async generateVisualExplanation(concept: string): Promise<{
@@ -355,19 +251,17 @@ class RealTimeTutoringService {
       Describe what visual aid would be most effective and provide detailed instructions for creating it.
       Consider diagrams, charts, animations, or interactive elements.`;
 
-      const visualData = await geminiService.generateContent({
-        contents: [
+      const visualData = await openaiService.chatCompletion({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert in educational visualization. Create clear, effective visual learning aids.'
+          },
           {
             role: 'user',
-            parts: [{ 
-              text: `You are an expert in educational visualization. Create clear, effective visual learning aids.\n\n${prompt}` 
-            }]
+            content: prompt
           }
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 600
-        }
+        ]
       });
 
       // Parse the response to extract visual information
@@ -397,7 +291,7 @@ class RealTimeTutoringService {
         newDifficulty = Math.max(1, newDifficulty - 1);
       }
 
-      // Generate adapted content using Gemini
+      // Generate adapted content
       const adaptedContent = await this.generateRealTimeContent(
         `Adapt this content to difficulty level ${newDifficulty}: ${currentContent.content}`,
         userPerformance,

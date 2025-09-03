@@ -7,9 +7,7 @@ import {
   Users, 
   Settings, 
   LogOut,
-  User,
-  GraduationCap,
-  Video
+  User
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -19,10 +17,8 @@ const Navigation = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/courses', label: 'Courses', icon: GraduationCap },
     { path: '/study', label: 'Study', icon: BookOpen },
     { path: '/social', label: 'Social', icon: Users },
-    { path: '/tavus-demo', label: 'Tavus Demo', icon: Video },
     { path: '/settings', label: 'Settings', icon: Settings },
   ];
 
@@ -85,7 +81,7 @@ const Navigation = () => {
 
       {/* Mobile Navigation */}
       <div className="md:hidden bg-white border-t border-gray-200">
-        <div className="grid grid-cols-6 gap-1 p-2">
+        <div className="grid grid-cols-4 gap-1 p-2">
           {navItems.map((item) => (
             <Link
               key={item.path}

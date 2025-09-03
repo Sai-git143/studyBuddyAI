@@ -1,57 +1,40 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
-import Courses from './pages/Courses';
 import StudySession from './pages/StudySession';
 import SocialHub from './pages/SocialHub';
 import Settings from './pages/Settings';
-import TavusVibeDemo from './pages/TavusVibeDemo';
 import AuthModal from './components/auth/AuthModal';
 import { useAuthStore } from './store/authStore';
-import { useUserDataStore } from './store/userDataStore';
 
 function App() {
-  const { isAuthenticated, showAuthModal, user } = useAuthStore();
-  const { syncUserData } = useUserDataStore();
-
-  // Sync user data when app loads and user is authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      syncUserData(user.id);
-    }
-  }, [isAuthenticated, user]);
+  const { isAuthenticated, showAuthModal } = useAuthStore();
 
   return (
     <Router>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <Routes>
-          {/* Public Routes */}
           <Route 
             path="/" 
             element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
           />
           
-          {/* Protected Routes - Only accessible when authenticated */}
+          {/* Protected Routes */}
           {isAuthenticated ? (
             <>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/courses" element={<Courses />} />
               <Route path="/study" element={<StudySession />} />
               <Route path="/social" element={<SocialHub />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/tavus-demo" element={<TavusVibeDemo />} />
             </>
           ) : (
             <>
-              {/* Redirect all protected routes to home when not authenticated */}
               <Route path="/dashboard" element={<Navigate to="/" replace />} />
-              <Route path="/courses" element={<Navigate to="/" replace />} />
               <Route path="/study" element={<Navigate to="/" replace />} />
               <Route path="/social" element={<Navigate to="/" replace />} />
               <Route path="/settings" element={<Navigate to="/" replace />} />
-              <Route path="/tavus-demo" element={<Navigate to="/" replace />} />
             </>
           )}
           
@@ -62,10 +45,7 @@ function App() {
           />
         </Routes>
         
-        {/* Auth Modal - Only show when not authenticated */}
-        {showAuthModal && !isAuthenticated && <AuthModal />}
-        
-        {/* Toast Notifications */}
+        {showAuthModal && <AuthModal />}
         <Toaster 
           position="top-right"
           toastOptions={{
@@ -75,18 +55,6 @@ function App() {
               color: '#ffffff',
               borderRadius: '12px',
               padding: '16px',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#ffffff',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#ffffff',
-              },
             },
           }}
         />

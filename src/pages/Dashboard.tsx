@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Brain, 
@@ -12,12 +12,7 @@ import {
   Video,
   BookOpen,
   Zap,
-  Heart,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Settings,
-  Activity
+  Heart
 } from 'lucide-react';
 import Navigation from '../components/layout/Navigation';
 import EmotionalStateIndicator from '../components/dashboard/EmotionalStateIndicator';
@@ -27,31 +22,12 @@ import RecentSessions from '../components/dashboard/RecentSessions';
 import StudyStreak from '../components/dashboard/StudyStreak';
 import WeeklyGoals from '../components/dashboard/WeeklyGoals';
 import AIInsights from '../components/dashboard/AIInsights';
-import UserActivityFeed from '../components/dashboard/UserActivityFeed';
-import RealTimeStats from '../components/dashboard/RealTimeStats';
 import { useAuthStore } from '../store/authStore';
-import { useUserDataStore } from '../store/userDataStore';
 import { useLearningStore } from '../store/learningStore';
-import { API_CONFIG } from '../config/api';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
-  const { addActivity, syncUserData } = useUserDataStore();
   const { progress, totalStudyTime, streakDays, achievements, totalXP, level } = useLearningStore();
-
-  useEffect(() => {
-    if (user) {
-      // Sync user data on dashboard load
-      syncUserData(user.id);
-      
-      // Add dashboard visit activity
-      addActivity(user.id, {
-        type: 'social_interaction',
-        description: 'Visited dashboard',
-        metadata: { page: 'dashboard' }
-      });
-    }
-  }, [user]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -60,56 +36,44 @@ const Dashboard = () => {
     return 'Good evening';
   };
 
-  // Check API configuration status
-  const getFeatureStatus = () => {
-    const features = [
-      {
-        name: 'Voice Recognition',
-        icon: Mic,
-        status: API_CONFIG.ELEVENLABS.API_KEY ? 'configured' : 'not-configured',
-        implemented: false,
-        description: API_CONFIG.ELEVENLABS.API_KEY ? 'API configured (feature in development)' : 'ElevenLabs API key required'
-      },
-      {
-        name: 'Video Avatar',
-        icon: Video,
-        status: API_CONFIG.TAVUS.API_KEY && API_CONFIG.TAVUS.REPLICA_ID ? 'configured' : 'not-configured',
-        implemented: false,
-        description: API_CONFIG.TAVUS.API_KEY && API_CONFIG.TAVUS.REPLICA_ID ? 'API configured (feature in development)' : 'Tavus API key/replica required'
-      },
-      {
-        name: 'Emotional Analysis',
-        icon: Heart,
-        status: 'active',
-        implemented: true,
-        description: 'Built-in emotional intelligence system'
-      },
-      {
-        name: 'Learning Path',
-        icon: Brain,
-        status: API_CONFIG.GEMINI.API_KEY ? 'active' : 'not-configured',
-        implemented: true,
-        description: API_CONFIG.GEMINI.API_KEY ? 'Gemini AI configured and active' : 'Gemini API key required'
-      }
-    ];
-
-    return features;
-  };
-
-  const features = getFeatureStatus();
-  const activeFeatures = features.filter(f => f.status === 'active' && f.implemented).length;
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <Brain className="h-16 w-16 text-primary-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Please Sign In</h1>
-          <p className="text-gray-600">You need to be logged in to access your dashboard.</p>
-        </div>
-      </div>
-    );
-  }
+  const stats = [
+    {
+      label: 'Study Time',
+      value: `${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`,
+      icon: <Clock className="h-5 w-5" />,
+      color: 'text-primary-600',
+      bg: 'bg-primary-50',
+      change: '+12%',
+      changeType: 'positive'
+    },
+    {
+      label: 'XP Points',
+      value: totalXP.toLocaleString(),
+      icon: <Zap className="h-5 w-5" />,
+      color: 'text-yellow-600',
+      bg: 'bg-yellow-50',
+      change: '+156',
+      changeType: 'positive'
+    },
+    {
+      label: 'Level',
+      value: level,
+      icon: <Award className="h-5 w-5" />,
+      color: 'text-purple-600',
+      bg: 'bg-purple-50',
+      change: 'Level up!',
+      changeType: 'positive'
+    },
+    {
+      label: 'Streak',
+      value: `${streakDays} days`,
+      icon: <Target className="h-5 w-5" />,
+      color: 'text-orange-600',
+      bg: 'bg-orange-50',
+      change: '+1',
+      changeType: 'positive'
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -128,21 +92,42 @@ const Dashboard = () => {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
               <div className="mb-4 lg:mb-0">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {getGreeting()}, {user.name}! 👋
+                  {getGreeting()}, {user?.name}! 👋
                 </h1>
                 <p className="text-lg text-gray-600">
-                  Welcome to your personalized learning dashboard. You're on Level {level}!
+                  Ready to continue your learning journey? You're on Level {level}!
                 </p>
-                <div className="mt-2 flex items-center text-sm text-gray-500">
-                  <Activity className="h-4 w-4 mr-1" />
-                  Last active: {new Date(user.lastLoginAt).toLocaleString()}
-                </div>
               </div>
               <EmotionalStateIndicator />
             </div>
 
-            {/* Real-time Stats */}
-            <RealTimeStats />
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
+                  <div className={`${stat.bg} ${stat.color} p-3 rounded-lg w-fit mb-3`}>
+                    {stat.icon}
+                  </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                    <div className={`text-xs px-2 py-1 rounded-full ${
+                      stat.changeType === 'positive' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {stat.change}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
 
           {/* Main Content Grid */}
@@ -171,8 +156,8 @@ const Dashboard = () => {
                 <ProgressChart />
               </motion.div>
 
-              {/* User Activity Feed */}
-              <UserActivityFeed />
+              {/* Recent Sessions */}
+              <RecentSessions />
             </div>
 
             {/* Right Column */}
@@ -192,69 +177,72 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
-                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+                className="bg-gradient-to-br from-primary-500 to-secondary-500 p-6 rounded-2xl text-white"
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center mb-4">
+                  <Brain className="h-6 w-6 mr-2" />
+                  <h3 className="text-lg font-semibold">AI Tutor Status</h3>
+                </div>
+                <div className="space-y-3">
                   <div className="flex items-center">
-                    <Brain className="h-6 w-6 text-primary-600 mr-3" />
-                    <h3 className="text-lg font-semibold text-gray-900">AI Tutor Status</h3>
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                    <span className="text-sm">Voice Recognition Active</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activeFeatures >= 2 ? 'bg-green-500' : 
-                      activeFeatures > 0 ? 'bg-yellow-500' : 'bg-red-500'
-                    } animate-pulse`}></div>
-                    <span className="text-xs font-medium text-gray-600">
-                      {activeFeatures}/{features.length} Ready
-                    </span>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                    <span className="text-sm">Video Avatar Ready</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                    <span className="text-sm">Emotional Analysis Online</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                    <span className="text-sm">Learning Path Optimized</span>
                   </div>
                 </div>
+                <button className="w-full mt-4 bg-white/20 text-white py-3 rounded-lg hover:bg-white/30 transition-colors font-medium">
+                  Start AI Learning Session
+                </button>
+              </motion.div>
 
-                <div className="space-y-3 mb-6">
-                  {features.map((feature, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <feature.icon className={`h-4 w-4 mr-3 ${
-                          feature.implemented && feature.status === 'active' ? 'text-green-600' : 
-                          feature.status === 'configured' ? 'text-yellow-600' : 'text-gray-400'
-                        }`} />
-                        <div>
-                          <span className={`text-sm font-medium ${
-                            feature.implemented && feature.status === 'active' ? 'text-gray-900' : 'text-gray-500'
-                          }`}>
-                            {feature.name}
-                          </span>
-                          <p className="text-xs text-gray-500">{feature.description}</p>
-                        </div>
+              {/* Recent Achievements */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+              >
+                <div className="flex items-center mb-4">
+                  <Award className="h-5 w-5 text-success-600 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Recent Achievements</h3>
+                </div>
+                <div className="space-y-3">
+                  {achievements.slice(-3).map((achievement, index) => (
+                    <div key={index} className="flex items-center p-3 bg-gradient-to-r from-success-50 to-primary-50 rounded-lg border border-success-200">
+                      <div className="w-10 h-10 bg-gradient-to-r from-success-500 to-primary-500 rounded-full flex items-center justify-center mr-3">
+                        <span className="text-lg">{achievement.icon}</span>
                       </div>
-                      {feature.implemented && feature.status === 'active' ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : feature.status === 'configured' ? (
-                        <Settings className="h-4 w-4 text-yellow-600" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-gray-400" />
-                      )}
+                      <div className="flex-1">
+                        <div className="font-medium text-success-700">{achievement.title}</div>
+                        <div className="text-xs text-success-600">{achievement.description}</div>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        achievement.rarity === 'legendary' ? 'bg-yellow-100 text-yellow-700' :
+                        achievement.rarity === 'epic' ? 'bg-purple-100 text-purple-700' :
+                        achievement.rarity === 'rare' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {achievement.rarity}
+                      </div>
                     </div>
                   ))}
                 </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-2">
-                  <button 
-                    className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                      activeFeatures >= 1 
-                        ? 'bg-primary-500 text-white hover:bg-primary-600' 
-                        : 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={activeFeatures === 0}
-                  >
-                    {activeFeatures >= 1 ? 'Start AI Session' : 'Configure APIs to Enable'}
-                  </button>
-                </div>
+                <button className="w-full mt-4 p-3 text-center text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors font-medium">
+                  View All Achievements
+                </button>
               </motion.div>
 
-              {/* Recent Sessions */}
-              <RecentSessions />
             </div>
           </div>
         </div>

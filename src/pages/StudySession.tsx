@@ -14,12 +14,10 @@ import {
   Settings,
   Award,
   Zap,
-  Activity,
-  Mic,
-  Video
+  Activity
 } from 'lucide-react';
 import Navigation from '../components/layout/Navigation';
-import AITutorInterface from '../components/ai/AITutorInterface';
+import RealTimeTutoringInterface from '../components/tutoring/RealTimeTutoringInterface';
 import EmotionalFeedback from '../components/study/EmotionalFeedback';
 import StudyProgress from '../components/study/StudyProgress';
 import PracticeProblems from '../components/study/PracticeProblems';
@@ -28,7 +26,6 @@ import AchievementModal from '../components/achievements/AchievementModal';
 import { useAuthStore } from '../store/authStore';
 import { useLearningStore } from '../store/learningStore';
 import { useBlockchainRewards } from '../hooks/useBlockchainRewards';
-import { API_CONFIG } from '../config/api';
 import toast from 'react-hot-toast';
 
 const StudySession = () => {
@@ -42,19 +39,14 @@ const StudySession = () => {
   const [showPracticeProblems, setShowPracticeProblems] = useState(false);
   const [achievementToShow, setAchievementToShow] = useState<any>(null);
   const [currentEmotion, setCurrentEmotion] = useState<'calm' | 'excited' | 'frustrated' | 'confident' | 'anxious'>('calm');
-  const [sessionMode, setSessionMode] = useState<'ai-tutor' | 'traditional'>('ai-tutor');
-
-  // Check feature availability
-  const isVoiceAvailable = !!API_CONFIG.ELEVENLABS.API_KEY;
-  const isVideoAvailable = !!(API_CONFIG.TAVUS.API_KEY && API_CONFIG.TAVUS.REPLICA_ID);
-  const isAIAvailable = !!API_CONFIG.GEMINI.API_KEY;
+  const [sessionMode, setSessionMode] = useState<'traditional' | 'realtime'>('realtime');
 
   useEffect(() => {
     if (!sessionStartTime) {
       setSessionStartTime(new Date());
       startStudySession('Mathematics');
       initializeWallet();
-      toast.success('Study session started! 🚀');
+      toast.success('Real-time study session started! 🚀');
     }
   }, []);
 
@@ -69,14 +61,14 @@ const StudySession = () => {
       endStudySession(duration, [currentTopic]);
       
       // Reward tokens for session completion
-      await rewardForActivity('Study Session', duration * 3);
+      await rewardForActivity('Real-time Study Session', duration * 3);
       
       // Check for achievements
       if (duration >= 30) {
         const achievement = {
-          id: 'focused-learner',
-          title: 'Focused Learner',
-          description: 'Completed a 30-minute study session',
+          id: 'realtime-learner',
+          title: 'Real-time Learner',
+          description: 'Completed a 30-minute real-time tutoring session',
           icon: '🎯',
           rarity: 'rare' as const,
           unlockedAt: new Date(),
@@ -145,8 +137,8 @@ const StudySession = () => {
                     <Activity className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">AI-Powered Study Session</h1>
-                    <p className="text-gray-600">{currentTopic} • Mathematics • Interactive Learning</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Real-Time AI Tutoring</h1>
+                    <p className="text-gray-600">{currentTopic} • Mathematics • Live Session</p>
                   </div>
                 </div>
                 
@@ -161,20 +153,9 @@ const StudySession = () => {
                     <span>{balance} tokens</span>
                   </div>
 
-                  {/* Feature Status Indicators */}
                   <div className="flex items-center space-x-2">
-                    <div className={`flex items-center text-xs px-2 py-1 rounded-full ${
-                      isVoiceAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      <Mic className="h-3 w-3 mr-1" />
-                      Voice
-                    </div>
-                    <div className={`flex items-center text-xs px-2 py-1 rounded-full ${
-                      isVideoAvailable ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      <Video className="h-3 w-3 mr-1" />
-                      Video
-                    </div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600 font-medium">Live</span>
                   </div>
                   
                   <button
@@ -201,15 +182,15 @@ const StudySession = () => {
               <div className="mt-4 flex items-center justify-center">
                 <div className="bg-gray-100 p-1 rounded-lg flex">
                   <button
-                    onClick={() => setSessionMode('ai-tutor')}
+                    onClick={() => setSessionMode('realtime')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      sessionMode === 'ai-tutor'
+                      sessionMode === 'realtime'
                         ? 'bg-white text-primary-600 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    <Brain className="h-4 w-4 mr-2 inline" />
-                    AI Tutor Mode
+                    <Activity className="h-4 w-4 mr-2 inline" />
+                    Real-Time Tutoring
                   </button>
                   <button
                     onClick={() => setSessionMode('traditional')}
@@ -224,23 +205,6 @@ const StudySession = () => {
                   </button>
                 </div>
               </div>
-
-              {/* Feature Availability Notice */}
-              {(!isVoiceAvailable || !isVideoAvailable) && (
-                <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-start">
-                    <Settings className="h-4 w-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-yellow-800">Enhanced Features Available</p>
-                      <p className="text-xs text-yellow-700 mt-1">
-                        {!isVoiceAvailable && 'Configure ElevenLabs API for voice recognition. '}
-                        {!isVideoAvailable && 'Configure Tavus API for video avatar. '}
-                        Check the setup guide for instructions.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </motion.div>
 
@@ -285,26 +249,20 @@ const StudySession = () => {
             {/* Left Column - Main Learning Interface */}
             <div className="lg:col-span-2 space-y-6">
               
-              {sessionMode === 'ai-tutor' ? (
-                <AITutorInterface
+              {sessionMode === 'realtime' ? (
+                <RealTimeTutoringInterface
                   subject="Mathematics"
                   topic={currentTopic}
                   onEmotionChange={handleEmotionDetected}
                 />
               ) : (
                 <div className="space-y-6">
-                  {/* Traditional study components */}
+                  {/* Traditional study components would go here */}
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Traditional Study Mode</h3>
-                    <p className="text-gray-600 mb-4">
-                      Switch to AI Tutor Mode for interactive learning with voice recognition and video avatar features.
+                    <p className="text-gray-600">
+                      Switch to Real-Time Tutoring mode for interactive AI-powered learning with live content generation and adaptive feedback.
                     </p>
-                    <button
-                      onClick={() => setSessionMode('ai-tutor')}
-                      className="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
-                    >
-                      Try AI Tutor Mode
-                    </button>
                   </div>
                 </div>
               )}
@@ -337,57 +295,36 @@ const StudySession = () => {
                 timeSpent={getSessionDuration()}
               />
 
-              {/* AI Features Status */}
+              {/* Real-Time Features */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
-                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+                className="bg-gradient-to-r from-primary-50 to-secondary-50 p-6 rounded-2xl border border-primary-200"
               >
-                <h3 className="font-semibold text-gray-900 mb-4">AI Features Status</h3>
+                <h3 className="font-semibold text-primary-800 mb-4">Real-Time Features</h3>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Mic className="h-4 w-4 mr-2 text-primary-600" />
-                      <span className="text-sm text-gray-700">Voice Recognition</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      isVoiceAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {isVoiceAvailable ? 'Ready' : 'Configure API'}
-                    </span>
+                  <div className="flex items-center text-sm text-primary-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                    Live Content Generation
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Video className="h-4 w-4 mr-2 text-blue-600" />
-                      <span className="text-sm text-gray-700">Video Avatar</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      isVideoAvailable ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {isVideoAvailable ? 'Ready' : 'Configure API'}
-                    </span>
+                  <div className="flex items-center text-sm text-primary-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                    Adaptive Difficulty
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Brain className="h-4 w-4 mr-2 text-green-600" />
-                      <span className="text-sm text-gray-700">AI Intelligence</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      isAIAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {isAIAvailable ? 'Active' : 'Configure API'}
-                    </span>
+                  <div className="flex items-center text-sm text-primary-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                    Emotional Intelligence
                   </div>
-                </div>
-
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-xs text-blue-700">
-                    💡 <strong>Setup Guide:</strong> Check the .env.example file for required API keys to enable all features.
-                  </p>
+                  <div className="flex items-center text-sm text-primary-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                    Interactive Problems
+                  </div>
+                  <div className="flex items-center text-sm text-primary-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                    Visual Explanations
+                  </div>
                 </div>
               </motion.div>
 
@@ -438,7 +375,7 @@ const StudySession = () => {
                   </div>
                   
                   <div className="text-xs text-yellow-600">
-                    • Earn 3x tokens for AI sessions
+                    • Earn 3x tokens for real-time sessions
                     • Verified on Algorand blockchain
                     • Trade with study partners
                   </div>

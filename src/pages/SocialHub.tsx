@@ -17,21 +17,15 @@ import {
   Filter,
   Globe,
   Mic,
-  Camera,
-  Phone,
-  PhoneOff
+  Camera
 } from 'lucide-react';
 import Navigation from '../components/layout/Navigation';
 import StudyPartnerCard from '../components/social/StudyPartnerCard';
-import TavusVideoInterface from '../components/ai/TavusVideoInterface';
-import { API_CONFIG } from '../config/api';
 import toast from 'react-hot-toast';
 
 const SocialHub = () => {
   const [activeTab, setActiveTab] = useState('partners');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showVideoCall, setShowVideoCall] = useState(false);
-  const [currentCallPartner, setCurrentCallPartner] = useState<string | null>(null);
 
   const studyPartners = [
     {
@@ -154,14 +148,6 @@ const SocialHub = () => {
       toast.error(`${partner.name} is currently offline`);
       return;
     }
-    
-    if (!API_CONFIG.TAVUS.API_KEY) {
-      toast.error('Video calling requires Tavus API configuration');
-      return;
-    }
-    
-    setCurrentCallPartner(partnerId);
-    setShowVideoCall(true);
     toast.success(`Starting video call with ${partner?.name}...`);
   };
 
@@ -171,20 +157,7 @@ const SocialHub = () => {
       toast.error('Room is full');
       return;
     }
-    
-    if (!API_CONFIG.TAVUS.API_KEY) {
-      toast.error('Video rooms require Tavus API configuration');
-      return;
-    }
-    
-    setShowVideoCall(true);
     toast.success(`Joining ${room?.name}...`);
-  };
-
-  const handleEndVideoCall = () => {
-    setShowVideoCall(false);
-    setCurrentCallPartner(null);
-    toast.info('Video call ended');
   };
 
   return (
@@ -248,45 +221,6 @@ const SocialHub = () => {
             </div>
           </motion.div>
 
-          {/* Video Call Modal */}
-          {showVideoCall && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
-              >
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">
-                    {currentCallPartner ? `Video Call with ${studyPartners.find(p => p.id === currentCallPartner)?.name}` : 'Study Room'}
-                  </h2>
-                  <button
-                    onClick={handleEndVideoCall}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <PhoneOff className="h-5 w-5 text-red-600" />
-                  </button>
-                </div>
-                <div className="h-96">
-                  <TavusVideoInterface
-                    subject={currentCallPartner ? studyPartners.find(p => p.id === currentCallPartner)?.subject || 'General' : 'Group Study'}
-                    topic={currentCallPartner ? 'Study Session' : 'Collaborative Learning'}
-                    personaId={API_CONFIG.TAVUS.REPLICA_ID || 'default-persona'}
-                    onConversationStart={(url) => console.log('Video call started:', url)}
-                    onConversationEnd={handleEndVideoCall}
-                    className="h-full"
-                  />
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-
           {/* Content based on active tab */}
           {activeTab === 'partners' && (
             <div>
@@ -346,16 +280,7 @@ const SocialHub = () => {
                 transition={{ duration: 0.4 }}
                 className="text-center"
               >
-                <button 
-                  onClick={() => {
-                    if (!API_CONFIG.TAVUS.API_KEY) {
-                      toast.error('Video rooms require Tavus API configuration');
-                      return;
-                    }
-                    setShowVideoCall(true);
-                  }}
-                  className="bg-secondary-600 text-white px-6 py-3 rounded-xl hover:bg-secondary-700 transition-colors flex items-center mx-auto"
-                >
+                <button className="bg-secondary-600 text-white px-6 py-3 rounded-xl hover:bg-secondary-700 transition-colors flex items-center mx-auto">
                   <Video className="h-5 w-5 mr-2" />
                   Create Study Room
                 </button>

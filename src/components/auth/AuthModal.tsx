@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Brain, Mail, Lock, User, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
+import { X, Brain, Mail, Lock, User, Eye, EyeOff, Loader } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -14,41 +14,28 @@ const AuthModal = () => {
     password: '',
     confirmPassword: ''
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (!isLogin) {
-      if (!formData.name) {
-        newErrors.name = 'Name is required';
-      }
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill in all required fields');
       return;
+    }
+
+    if (!isLogin) {
+      if (!formData.name) {
+        toast.error('Please enter your name');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+      if (formData.password.length < 6) {
+        toast.error('Password must be at least 6 characters');
+        return;
+      }
     }
 
     try {
@@ -63,13 +50,10 @@ const AuthModal = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleDemoLogin = async () => {
@@ -120,13 +104,13 @@ const AuthModal = () => {
               </h2>
               <p className="text-gray-600">
                 {isLogin 
-                  ? 'Sign in to access your personalized learning dashboard' 
-                  : 'Create your account to start your learning journey'
+                  ? 'Continue your learning journey' 
+                  : 'Start your intelligent learning adventure'
                 }
               </p>
             </div>
 
-            {/* Demo Login Section */}
+            {/* Demo Button - Prominent placement */}
             <div className="mb-6">
               <button
                 onClick={handleDemoLogin}
@@ -136,17 +120,14 @@ const AuthModal = () => {
                 {loading ? (
                   <>
                     <Loader className="h-5 w-5 mr-2 animate-spin" />
-                    Signing in...
+                    Logging in...
                   </>
                 ) : (
                   <>
-                    🚀 Try Demo Account
+                    🚀 Try Demo Account (Instant Access)
                   </>
                 )}
               </button>
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Email: demo@studybuddy.ai | Password: demo123
-              </p>
             </div>
 
             {/* Divider */}
@@ -164,7 +145,7 @@ const AuthModal = () => {
               {!isLogin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
+                    Name
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -174,24 +155,16 @@ const AuthModal = () => {
                       value={formData.name}
                       onChange={handleInputChange}
                       disabled={loading}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 ${
-                        errors.name ? 'border-red-500' : 'border-gray-200'
-                      }`}
-                      placeholder="Enter your full name"
+                      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                      placeholder="Your full name"
                     />
                   </div>
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.name}
-                    </p>
-                  )}
                 </div>
               )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
+                  Email
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -201,23 +174,15 @@ const AuthModal = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 ${
-                      errors.email ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    placeholder="Enter your email"
+                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                    placeholder="your@email.com"
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.email}
-                  </p>
-                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password *
+                  Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -227,10 +192,8 @@ const AuthModal = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className={`w-full pl-11 pr-11 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 ${
-                      errors.password ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    placeholder="Enter your password"
+                    className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                    placeholder="Your password"
                   />
                   <button
                     type="button"
@@ -241,18 +204,12 @@ const AuthModal = () => {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.password}
-                  </p>
-                )}
               </div>
 
               {!isLogin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm Password *
+                    Confirm Password
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -262,18 +219,10 @@ const AuthModal = () => {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       disabled={loading}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 ${
-                        errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
-                      }`}
+                      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
                       placeholder="Confirm your password"
                     />
                   </div>
-                  {errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.confirmPassword}
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -298,11 +247,7 @@ const AuthModal = () => {
               <p className="text-gray-600">
                 {isLogin ? "Don't have an account?" : 'Already have an account?'}
                 <button
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-                    setErrors({});
-                  }}
+                  onClick={() => setIsLogin(!isLogin)}
                   disabled={loading}
                   className="ml-2 text-primary-600 font-medium hover:text-primary-700 transition-colors disabled:opacity-50"
                 >
@@ -311,10 +256,10 @@ const AuthModal = () => {
               </p>
             </div>
 
-            {/* Security Notice */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <p className="text-xs text-blue-700 text-center">
-                🔒 <strong>Secure Authentication:</strong> Your data is protected with industry-standard security measures.
+            {/* Demo Note */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+              <p className="text-sm text-blue-800 text-center">
+                <strong>🎯 Demo Features:</strong> Full AI tutoring, voice interaction, study partners, and progress tracking - all available instantly!
               </p>
             </div>
           </motion.div>

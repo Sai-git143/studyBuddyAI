@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { elevenLabsService } from '../services/elevenLabsService';
 import { tavusService } from '../services/tavusService';
-import { geminiService, LearningContext } from '../services/geminiService';
+import { openaiService, LearningContext } from '../services/openaiService';
 import { useAuthStore } from '../store/authStore';
 import { useLearningStore } from '../store/learningStore';
 
@@ -49,8 +49,8 @@ export const useRealTimeAI = () => {
           ).join('\n')}`
         : '';
 
-      // Generate text response using Gemini
-      const responseText = await geminiService.generateTutorResponse(
+      // Generate text response using OpenAI
+      const responseText = await openaiService.generateTutorResponse(
         userMessage + conversationContext, 
         context
       );
@@ -109,10 +109,10 @@ export const useRealTimeAI = () => {
       
       if (error instanceof Error) {
         if (error.message.includes('API key')) {
-          fallbackText = "It looks like there's an issue with the AI service configuration. Please check that your Gemini API key is properly set up.";
+          fallbackText = "It looks like there's an issue with the AI service configuration. Please check that your OpenAI API key is properly set up.";
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           fallbackText = "I'm having trouble connecting to the AI service. Please check your internet connection and try again.";
-        } else if (error.message.includes('rate limit') || error.message.includes('quota')) {
+        } else if (error.message.includes('rate limit')) {
           fallbackText = "I'm receiving too many requests right now. Please wait a moment and try again.";
         }
       }
@@ -148,7 +148,7 @@ export const useRealTimeAI = () => {
         strongAreas: progress.find(p => p.subject === currentSubject)?.strongAreas || []
       };
 
-      return await geminiService.generateRealTimeContent({
+      return await openaiService.generateRealTimeContent({
         type,
         topic,
         difficulty,
@@ -168,7 +168,7 @@ export const useRealTimeAI = () => {
   ): Promise<any[]> => {
     try {
       const weakAreas = progress.find(p => p.subject === subject)?.weakAreas || [];
-      return await geminiService.generatePracticeProblems(
+      return await openaiService.generatePracticeProblems(
         subject,
         topic,
         difficulty,
@@ -228,7 +228,7 @@ export const useRealTimeAI = () => {
     emotionalState: string
   ): Promise<string[]> => {
     try {
-      return await geminiService.generateLearningInsights(
+      return await openaiService.generateLearningInsights(
         sessionData,
         userProgress,
         emotionalState
@@ -250,7 +250,7 @@ export const useRealTimeAI = () => {
     targetDifficulty: number
   ): Promise<string> => {
     try {
-      return await geminiService.adaptContentDifficulty(
+      return await openaiService.adaptContentDifficulty(
         originalContent,
         userPerformance,
         timeSpent,
